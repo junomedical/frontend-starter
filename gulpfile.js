@@ -1,7 +1,8 @@
 'use strict';
 
 var
-  gulp = require('gulp');
+  gulp = require('gulp'),
+  argv = require('yargs').argv;
 
 require('./tasks/server')('server', {
   baseDir: 'public/'
@@ -14,14 +15,14 @@ require('./tasks/clean')('clean', {
 require('./tasks/copy')('copy', {
   source: 'demo/copy/**/*',
   dest: 'public/',
-  watch: true
+  watch: argv.watch || true
 });
 
 require('./tasks/fonts')('fonts', {
   source: 'demo/fonts/**/*.{otf,ttf,woff,woff2,svg}',
   dest: 'public/css',
   targetFile: 'fonts.css',
-  watch: true
+  watch: argv.watch || true
 });
 
 require('./tasks/image')('images', {
@@ -38,7 +39,7 @@ require('./tasks/image')('images', {
     {removeViewBox: false}
   ],
   reCompress: true,
-  watch: true,
+  watch: argv.watch || true,
   flatten: true,
   hook: function(file, t) { console.log(file.path.toString()); }
   }
@@ -51,7 +52,7 @@ require('./tasks/sass')('sass', {
   sourcemaps: false,
   minify: true,
   prefixOptions: {browsers: ['> 1%', 'last 1 versions'], cascade: false},
-  watch: true
+  watch: argv.watch || true
 });
 
 require('./tasks/stylus')('stylus', {
@@ -73,7 +74,7 @@ require('./tasks/stylus')('stylus', {
     ]
   },
   prefixOptions: {browsers: ['> 1%', 'last 1 versions'], cascade: false},
-  watch: true
+  watch: argv.watch || true
 });
 
 require('./tasks/script')('scripts', {
@@ -88,7 +89,12 @@ require('./tasks/script')('scripts', {
   },
   sourcemaps: true,
   minify: true,
-  watch: false
+  watch: argv.watch || true
+});
+
+require('./tasks/tests')('tests', {
+  karmaConfFile: __dirname + '/demo/karma.conf.js',
+  watch: argv.watch || true
 });
 
 require('./tasks/styleguide')('styleguide', {
@@ -109,10 +115,8 @@ require('./tasks/styleguide')('styleguide', {
   }
 });
 
-gulp.task('build', gulp.series('clean', gulp.parallel('copy', 'scripts', 'images', 'sass')));
+gulp.task('javascript', gulp.series('tests', 'scripts'));
+gulp.task('build', gulp.series('clean', gulp.parallel('copy', 'javascript', 'images', 'sass')));
 gulp.task('default', gulp.series('build'));
 gulp.task('watch', gulp.parallel('sass:watch', 'scripts:watch', 'images:watch', 'copy:watch'));
-gulp.task('dev', gulp.series('build', 'server', 'watch'));
-
-gulp.task('dev:styleguide', gulp.series('build', 'styleguide:dev', 'watch'));
-gulp.task('build:styleguide', gulp.series('build', 'styleguide:build'));
+gulp.task('dev', gulp.series('build', 'styleguide:dev', 'watch'));
